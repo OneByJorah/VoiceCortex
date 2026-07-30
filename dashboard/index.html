@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoiceCortex — Self-hosted Phone AI Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-card: #1a1a28;
+      --bg-card-hover: #22223a;
+      --accent: #7c3aed;
+      --accent-light: #a78bfa;
+      --accent-glow: rgba(124, 58, 237, 0.25);
+      --green: #22c55e;
+      --blue: #3b82f6;
+      --cyan: #06b6d4;
+      --orange: #f59e0b;
+      --red: #ef4444;
+      --text: #e4e4ef;
+      --text-secondary: #8888aa;
+      --text-muted: #555577;
+      --border: #2a2a3e;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    .bg-grain {
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 0;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+    /* Hero */
+    .hero {
+      min-height: 85vh; display: flex; flex-direction: column; justify-content: center; align-items: center;
+      text-align: center; padding: 80px 24px 60px;
+      position: relative;
+    }
+    .hero::before {
+      content: ''; position: absolute; top: 50%; left: 50%; translate: -50% -50%;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(124, 58, 237, 0.12); border: 1px solid rgba(124, 58, 237, 0.25);
+      padding: 6px 16px; border-radius: 100px; font-size: 13px; font-weight: 500;
+      color: var(--accent-light); margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: clamp(44px, 7vw, 80px); font-weight: 800; letter-spacing: -2px;
+      line-height: 1.05; margin-bottom: 16px;
+    }
+    .hero h1 span { background: linear-gradient(135deg, var(--accent-light), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p {
+      font-size: clamp(16px, 2vw, 20px); color: var(--text-secondary);
+      max-width: 600px; margin-bottom: 32px;
+    }
+    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 28px; border-radius: 10px; font-weight: 600; font-size: 15px;
+      text-decoration: none; transition: all .2s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #6d28d9; transform: translateY(-1px); box-shadow: 0 8px 24px var(--accent-glow); }
+    .btn-outline { border: 1px solid var(--border); color: var(--text); background: transparent; }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent-light); }
+
+    /* Section titles */
+    .section-title {
+      font-size: 28px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.5px;
+    }
+    .section-sub { color: var(--text-secondary); font-size: 15px; margin-bottom: 40px; }
+
+    /* Screenshot */
+    .screenshot-section { padding: 40px 0 80px; }
+    .screenshot-frame {
+      border-radius: 16px; overflow: hidden;
+      border: 1px solid var(--border); background: var(--bg-secondary);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+    }
+    .screenshot-frame img { width: 100%; display: block; }
+
+    /* Features */
+    .features { padding: 80px 0; }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .feature-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 28px; transition: all .25s;
+    }
+    .feature-card:hover { background: var(--bg-card-hover); border-color: var(--accent); transform: translateY(-2px); }
+    .feature-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; margin-bottom: 16px;
+    }
+    .feature-card h3 { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+    .feature-card p { font-size: 14px; color: var(--text-secondary); }
+
+    /* Architecture Diagram */
+    .architecture { padding: 80px 0; }
+    .arch-diagram {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 40px 32px; overflow-x: auto;
+    }
+    .arch-flow {
+      display: flex; align-items: center; justify-content: center;
+      flex-wrap: wrap; gap: 0;
+    }
+    .arch-node {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 16px 20px; min-width: 100px;
+    }
+    .arch-node .box {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px 20px; text-align: center;
+      font-size: 13px; font-weight: 500; white-space: nowrap;
+      transition: all .2s;
+    }
+    .arch-node .box:hover { border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+    .arch-node .icon { font-size: 24px; }
+    .arch-arrow { font-size: 20px; color: var(--text-muted); padding: 0 4px; }
+
+    @media (max-width: 768px) {
+      .arch-flow { flex-direction: column; }
+      .arch-arrow { transform: rotate(90deg); padding: 8px 0; }
+    }
+
+    .arch-detail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px; margin-top: 24px;
+    }
+    .arch-detail {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px 20px;
+    }
+    .arch-detail .label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 4px; }
+    .arch-detail .value { font-size: 14px; font-weight: 500; }
+
+    /* Tech Stack */
+    .techstack { padding: 80px 0; }
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .tech-item {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px 20px; text-align: center;
+      font-size: 14px; font-weight: 500; transition: all .2s;
+    }
+    .tech-item:hover { border-color: var(--accent); }
+    .tech-item .tech-cat { font-size: 11px; color: var(--text-muted); font-weight: 400; margin-top: 2px; }
+
+    /* Env vars */
+    .env-vars { padding: 80px 0; }
+    .env-table {
+      width: 100%; border-collapse: separate; border-spacing: 0;
+      font-size: 13px; font-family: 'JetBrains Mono', monospace;
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+    }
+    .env-table th {
+      text-align: left; padding: 12px 16px;
+      background: var(--bg-secondary); color: var(--text-secondary);
+      font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+    }
+    .env-table td { padding: 10px 16px; border-top: 1px solid var(--border); }
+    .env-table tr:hover td { background: var(--bg-card-hover); }
+    .env-table .var { color: var(--cyan); }
+    .env-table .default { color: var(--text-muted); font-size: 12px; }
+
+    /* Quick Start */
+    .quickstart { padding: 80px 0; }
+    .code-block {
+      background: #0d0d1a; border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px 24px;
+      font-family: 'JetBrains Mono', monospace; font-size: 13px;
+      overflow-x: auto; margin-bottom: 24px;
+      position: relative;
+    }
+    .code-block .prompt { color: var(--green); }
+    .code-block .comment { color: var(--text-muted); font-style: italic; }
+    .code-block .keyword { color: var(--accent-light); }
+
+    .steps { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+    .step {
+      display: flex; align-items: flex-start; gap: 16px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 18px 20px;
+    }
+    .step-num {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--accent); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 14px; flex-shrink: 0;
+    }
+    .step-content h4 { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+    .step-content p { font-size: 13px; color: var(--text-secondary); }
+
+    /* Structure */
+    .structure { padding: 80px 0; }
+    .tree {
+      font-family: 'JetBrains Mono', monospace; font-size: 13px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px 28px; overflow-x: auto;
+      line-height: 2;
+    }
+    .tree .dir { color: var(--accent-light); }
+    .tree .file { color: var(--text); }
+    .tree .comment { color: var(--text-muted); font-style: italic; }
+
+    /* Footer */
+    .footer {
+      padding: 40px 0; text-align: center;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted); font-size: 14px;
+    }
+    .footer a { color: var(--accent-light); text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+
+    /* Badges row */
+    .badges { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-bottom: 16px; }
+    .badges img { height: 20px; }
+
+    /* Section separator */
+    .sep { height: 1px; background: var(--border); margin: 0; }
+
+    /* Mermaid fallback */
+    .mermaid-svg { max-width: 100%; }
+  </style>
+</head>
+<body>
+<div class="bg-grain"></div>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="badges">
+    <img src="https://img.shields.io/github/license/OneByJorah/VoiceCortex?color=%237c3aed&style=flat" alt="License">
+    <img src="https://img.shields.io/badge/python-3.11%2B-%233b82f6?style=flat" alt="Python">
+    <img src="https://img.shields.io/github/v/release/OneByJorah/VoiceCortex?style=flat&color=%2322c55e" alt="Release">
+    <img src="https://img.shields.io/github/last-commit/OneByJorah/VoiceCortex?style=flat&color=%2306b6d4" alt="Last commit">
+    <img src="https://img.shields.io/badge/status-beta-%23f59e0b?style=flat" alt="Status">
+  </div>
+  <div class="hero-badge">&#x1f916; AI Voice Pipeline &middot; Fully Self-Hosted</div>
+  <h1>Voice<span>Cortex</span></h1>
+  <p>Self-hosted, real-time phone AI assistant — STT, LLM, TTS pipeline with Twilio, Asterisk, FreeSWITCH, and SIP support.</p>
+  <div class="hero-actions">
+    <a href="#quickstart" class="btn btn-primary">&#x25B6; Get Started</a>
+    <a href="https://github.com/OneByJorah/VoiceCortex" class="btn btn-outline">&#x231A; GitHub</a>
+    <a href="#architecture" class="btn btn-outline">&#x1F4CA; Architecture</a>
+  </div>
+</section>
+
+<!-- Screenshot -->
+<section class="screenshot-section">
+  <div class="container">
+    <div class="screenshot-frame">
+      <img src="screenshot.png" alt="VoiceCortex screenshot"
+           onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'padding:60px;text-align:center;color:var(--text-muted)\'>Screenshot coming soon — run the dashboard to generate.</div>'">
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- Features -->
+<section class="features" id="features">
+  <div class="container">
+    <h2 class="section-title">Pipeline Features</h2>
+    <p class="section-sub">End-to-end voice AI — from phone call to spoken response.</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(59,130,246,.15);color:var(--blue)">&#x1f3e1;</div>
+        <h3>Phone Integration</h3>
+        <p>Twilio, Asterisk, FreeSWITCH, and raw SIP — connect any phone system.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(34,197,94,.15);color:var(--green)">&#x1f399;</div>
+        <h3>STT Pipeline</h3>
+        <p>faster-whisper with configurable model sizes and VAD filtering for clean transcription.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(124,58,237,.15);color:var(--accent-light)">&#x1f9e0;</div>
+        <h3>LLM Processing</h3>
+        <p>Ollama, llama.cpp, or cloud API (Claude, GPT) — your choice of AI brain.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(6,182,212,.15);color:var(--cyan)">&#x1f30a;</div>
+        <h3>TTS Output</h3>
+        <p>Piper TTS with multiple voices, resampled to your phone codec in real time.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(245,158,11,.15);color:var(--orange)">&#x26a1;</div>
+        <h3>Real-Time Streaming</h3>
+        <p>Low-latency WebSocket streaming with Voice Activity Detection for natural conversation flow.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(239,68,68,.15);color:var(--red)">&#x1f4dd;</div>
+        <h3>Call Logging</h3>
+        <p>Automatic call recording, transcription, and full conversation history.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- Architecture -->
+<section class="architecture" id="architecture">
+  <div class="container">
+    <h2 class="section-title">Call Flow Architecture</h2>
+    <p class="section-sub">How audio moves through the pipeline from phone call to AI response.</p>
+    <div class="arch-diagram">
+      <div class="arch-flow">
+        <div class="arch-node"><div class="box">&#x1f4de; Phone Call</div></div>
+        <div class="arch-arrow">&#x2192;</div>
+        <div class="arch-node"><div class="box">FreeSWITCH /<br>Asterisk / Twilio</div></div>
+        <div class="arch-arrow">&#x2192;</div>
+        <div class="arch-node"><div class="box">VAD<br>(Voice Activity)</div></div>
+        <div class="arch-arrow">&#x2192;</div>
+        <div class="arch-node"><div class="box" style="border-color:var(--blue)">STT<br>faster-whisper</div></div>
+        <div class="arch-arrow">&#x2192;</div>
+        <div class="arch-node"><div class="box" style="border-color:var(--accent)">LLM<br>Ollama / API</div></div>
+        <div class="arch-arrow">&#x2192;</div>
+        <div class="arch-node"><div class="box" style="border-color:var(--cyan)">TTS<br>Piper</div></div>
+        <div class="arch-arrow">&#x2192;</div>
+        <div class="arch-node"><div class="box">&#x1f4de; Phone Response</div></div>
+      </div>
+      <div class="arch-detail-grid">
+        <div class="arch-detail"><div class="label">Transport</div><div class="value">WebSocket (mod_audio_fork) / HTTP</div></div>
+        <div class="arch-detail"><div class="label">Audio Codec</div><div class="value">PCM16 8kHz (G.711) / 16kHz</div></div>
+        <div class="arch-detail"><div class="label">LLM Backends</div><div class="value">Ollama / llama.cpp / Anthropic / OpenAI</div></div>
+        <div class="arch-detail"><div class="label">Deployment</div><div class="value">Docker Compose or bare-metal</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- Tech Stack -->
+<section class="techstack" id="techstack">
+  <div class="container">
+    <h2 class="section-title">Tech Stack</h2>
+    <p class="section-sub">Built with open-source tools, deployable anywhere.</p>
+    <div class="tech-grid">
+      <div class="tech-item">Python 3.11+ <div class="tech-cat">Runtime</div></div>
+      <div class="tech-item">faster-whisper <div class="tech-cat">Speech-to-Text</div></div>
+      <div class="tech-item">Piper TTS <div class="tech-cat">Text-to-Speech</div></div>
+      <div class="tech-item">Ollama <div class="tech-cat">LLM Backend</div></div>
+      <div class="tech-item">llama.cpp <div class="tech-cat">LLM Backend</div></div>
+      <div class="tech-item">Anthropic / OpenAI <div class="tech-cat">Cloud LLM</div></div>
+      <div class="tech-item">Twilio <div class="tech-cat">Phone</div></div>
+      <div class="tech-item">Asterisk / FreePBX <div class="tech-cat">Phone</div></div>
+      <div class="tech-item">FreeSWITCH <div class="tech-cat">Phone</div></div>
+      <div class="tech-item">WebSockets <div class="tech-cat">Transport</div></div>
+      <div class="tech-item">Docker / Compose <div class="tech-cat">Deploy</div></div>
+      <div class="tech-item">CUDA / CPU <div class="tech-cat">Hardware</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- Quick Start -->
+<section class="quickstart" id="quickstart">
+  <div class="container">
+    <h2 class="section-title">Quick Start</h2>
+    <p class="section-sub">Get VoiceCortex running in under a minute.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h4>Clone &amp; Configure</h4>
+          <p>Copy the environment template and adjust settings for your phone provider and LLM.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h4>Launch with Docker</h4>
+          <p>One command starts the bot, STT, LLM gateway, and TTS engine.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h4>Connect Your Phone System</h4>
+          <p>Point Twilio / Asterisk / FreeSWITCH at the bot WebSocket URL and answer calls.</p>
+        </div>
+      </div>
+    </div>
+    <div class="code-block">
+      <span class="comment"># Clone &amp; enter</span><br>
+      <span class="prompt">$</span> git clone https://github.com/OneByJorah/VoiceCortex.git<br>
+      <span class="prompt">$</span> <span class="keyword">cd</span> VoiceCortex<br><br>
+      <span class="comment"># Configure environment</span><br>
+      <span class="prompt">$</span> cp .env.example .env<br>
+      <span class="prompt">$</span> <span class="keyword">vim</span> .env  <span class="comment"># set STT_PROVIDER, LLM_PROVIDER, TTS voice, etc.</span><br><br>
+      <span class="comment"># Deploy</span><br>
+      <span class="prompt">$</span> docker compose up -d<br><br>
+      <span class="comment"># Or run locally</span><br>
+      <span class="prompt">$</span> pip install -r requirements.txt<br>
+      <span class="prompt">$</span> python3 bot/server.py
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- Environment -->
+<section class="env-vars" id="config">
+  <div class="container">
+    <h2 class="section-title">Configuration</h2>
+    <p class="section-sub">Environment variables to customize VoiceCortex for your setup.</p>
+    <table class="env-table">
+      <thead>
+        <tr><th>Variable</th><th>Default</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="var">STT_PROVIDER</td><td class="default">faster-whisper</td><td>Speech-to-text engine</td></tr>
+        <tr><td class="var">STT_MODEL</td><td class="default">base</td><td>STT model size (tiny/base/small/medium/large)</td></tr>
+        <tr><td class="var">LLM_PROVIDER</td><td class="default">ollama</td><td>LLM backend (ollama / llamacpp / api)</td></tr>
+        <tr><td class="var">LLM_MODEL</td><td class="default">llama2</td><td>LLM model name</td></tr>
+        <tr><td class="var">TTS_PROVIDER</td><td class="default">piper</td><td>Text-to-speech engine</td></tr>
+        <tr><td class="var">TTS_VOICE</td><td class="default">en_US-lessac</td><td>TTS voice model</td></tr>
+        <tr><td class="var">TWILIO_SID</td><td class="default">—</td><td>Twilio account SID</td></tr>
+        <tr><td class="var">TWILIO_TOKEN</td><td class="default">—</td><td>Twilio auth token</td></tr>
+        <tr><td class="var">PORT</td><td class="default">8080</td><td>API port</td></tr>
+        <tr><td class="var">LLM_BACKEND</td><td class="default">ollama</td><td>Backend routing (ollama / llamacpp / api)</td></tr>
+        <tr><td class="var">API_KEY</td><td class="default">—</td><td>Cloud LLM API key</td></tr>
+        <tr><td class="var">API_MODEL</td><td class="default">claude-sonnet-4-6</td><td>Cloud LLM model</td></tr>
+        <tr><td class="var">WHISPER_MODEL</td><td class="default">small.en</td><td>Whisper model variant</td></tr>
+        <tr><td class="var">WHISPER_DEVICE</td><td class="default">cuda</td><td>STT compute device</td></tr>
+        <tr><td class="var">BOT_WS_PORT</td><td class="default">8765</td><td>Internal WebSocket port</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- Structure -->
+<section class="structure" id="structure">
+  <div class="container">
+    <h2 class="section-title">Project Structure</h2>
+    <p class="section-sub">Organized for clarity and extensibility.</p>
+    <div class="tree">
+      <span class="dir">VoiceCortex/</span><br>
+      &#x251c;&#x2500;&#x2500; <span class="dir">bot/</span><br>
+      &#x2502;  &#x251c;&#x2500;&#x2500; <span class="file">server.py</span>              <span class="comment"># FreeSWITCH WebSocket transport</span><br>
+      &#x2502;  &#x251c;&#x2500;&#x2500; <span class="file">server_asterisk.py</span>      <span class="comment"># Asterisk HTTP transport</span><br>
+      &#x2502;  &#x251c;&#x2500;&#x2500; <span class="file">hermes_brain.py</span>          <span class="comment"># STT → LLM → TTS core</span><br>
+      &#x2502;  &#x251c;&#x2500;&#x2500; <span class="file">vad.py</span>                   <span class="comment"># Voice Activity Detection</span><br>
+      &#x2502;  &#x251c;&#x2500;&#x2500; <span class="file">persona.txt</span>              <span class="comment"># AI system prompt</span><br>
+      &#x2502;  &#x2514;&#x2500;&#x2500; <span class="file">requirements.txt</span><br>
+      &#x251c;&#x2500;&#x2500; <span class="dir">freeswitch/</span><br>
+      &#x2502;  &#x2514;&#x2500;&#x2500; <span class="dir">conf/</span>                   <span class="comment"># FreeSWITCH configuration</span><br>
+      &#x251c;&#x2500;&#x2500; <span class="dir">docs/</span><br>
+      &#x2502;  &#x2514;&#x2500;&#x2500; <span class="dir">assets/</span>                 <span class="comment"># Brand assets, screenshots</span><br>
+      &#x251c;&#x2500;&#x2500; <span class="file">docker-compose.yml</span>         <span class="comment"># Docker deployment</span><br>
+      &#x251c;&#x2500;&#x2500; <span class="file">Dockerfile</span><br>
+      &#x251c;&#x2500;&#x2500; <span class="file">.env.example</span>               <span class="comment"># Environment template</span><br>
+      &#x251c;&#x2500;&#x2500; <span class="file">j1.yaml</span>                    <span class="comment"># Project metadata</span><br>
+      &#x251c;&#x2500;&#x2500; <span class="file">LICENSE</span><br>
+      &#x2514;&#x2500;&#x2500; <span class="file">README.md</span>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container">
+    <p>
+      <a href="https://github.com/OneByJorah/VoiceCortex">GitHub</a> &middot;
+      <a href="https://jorahone.com">JorahOne</a> &middot;
+      <a href="LICENSE">MIT License</a> &middot;
+      <a href="SECURITY.md">Security</a>
+    </p>
+    <p style="margin-top: 8px; font-size: 13px;">
+      Built with &#x1f334; by <a href="https://github.com/OneByJorah">OneByJorah</a>
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>
