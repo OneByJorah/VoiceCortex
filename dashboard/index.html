@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VoiceCortex — Self-hosted Phone AI Assistant</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%A0%3C/text%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
@@ -263,7 +264,7 @@
   </div>
   <div class="hero-badge">&#x1f916; AI Voice Pipeline &middot; Fully Self-Hosted</div>
   <h1>Voice<span>Cortex</span></h1>
-  <p>Self-hosted, real-time phone AI assistant — STT, LLM, TTS pipeline with Twilio, Asterisk, FreeSWITCH, and SIP support.</p>
+  <p>Self-hosted, real-time phone AI assistant — STT, LLM, TTS pipeline with Asterisk, FreeSWITCH, and SIP trunking support.</p>
   <div class="hero-actions">
     <a href="#quickstart" class="btn btn-primary">&#x25B6; Get Started</a>
     <a href="https://github.com/OneByJorah/VoiceCortex" class="btn btn-outline">&#x231A; GitHub</a>
@@ -292,7 +293,7 @@
       <div class="feature-card">
         <div class="feature-icon" style="background:rgba(59,130,246,.15);color:var(--blue)">&#x1f3e1;</div>
         <h3>Phone Integration</h3>
-        <p>Twilio, Asterisk, FreeSWITCH, and raw SIP — connect any phone system.</p>
+        <p>Asterisk, FreeSWITCH, FreePBX/3CX — connect any phone system via SIP trunking.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon" style="background:rgba(34,197,94,.15);color:var(--green)">&#x1f399;</div>
@@ -334,7 +335,7 @@
       <div class="arch-flow">
         <div class="arch-node"><div class="box">&#x1f4de; Phone Call</div></div>
         <div class="arch-arrow">&#x2192;</div>
-        <div class="arch-node"><div class="box">FreeSWITCH /<br>Asterisk / Twilio</div></div>
+        <div class="arch-node"><div class="box">FreeSWITCH /<br>Asterisk / SIP</div></div>
         <div class="arch-arrow">&#x2192;</div>
         <div class="arch-node"><div class="box">VAD<br>(Voice Activity)</div></div>
         <div class="arch-arrow">&#x2192;</div>
@@ -370,9 +371,9 @@
       <div class="tech-item">Ollama <div class="tech-cat">LLM Backend</div></div>
       <div class="tech-item">llama.cpp <div class="tech-cat">LLM Backend</div></div>
       <div class="tech-item">Anthropic / OpenAI <div class="tech-cat">Cloud LLM</div></div>
-      <div class="tech-item">Twilio <div class="tech-cat">Phone</div></div>
       <div class="tech-item">Asterisk / FreePBX <div class="tech-cat">Phone</div></div>
       <div class="tech-item">FreeSWITCH <div class="tech-cat">Phone</div></div>
+      <div class="tech-item">SIP Trunking <div class="tech-cat">Phone</div></div>
       <div class="tech-item">WebSockets <div class="tech-cat">Transport</div></div>
       <div class="tech-item">Docker / Compose <div class="tech-cat">Deploy</div></div>
       <div class="tech-item">CUDA / CPU <div class="tech-cat">Hardware</div></div>
@@ -416,11 +417,11 @@
       <span class="prompt">$</span> <span class="keyword">cd</span> VoiceCortex<br><br>
       <span class="comment"># Configure environment</span><br>
       <span class="prompt">$</span> cp .env.example .env<br>
-      <span class="prompt">$</span> <span class="keyword">vim</span> .env  <span class="comment"># set STT_PROVIDER, LLM_PROVIDER, TTS voice, etc.</span><br><br>
+      <span class="prompt">$</span> <span class="keyword">vim</span> .env  <span class="comment"># set LLM_BACKEND, WHISPER_MODEL, etc.</span><br><br>
       <span class="comment"># Deploy</span><br>
       <span class="prompt">$</span> docker compose up -d<br><br>
       <span class="comment"># Or run locally</span><br>
-      <span class="prompt">$</span> pip install -r requirements.txt<br>
+      <span class="prompt">$</span> pip install -r bot/requirements.txt<br>
       <span class="prompt">$</span> python3 bot/server.py
     </div>
   </div>
@@ -438,21 +439,17 @@
         <tr><th>Variable</th><th>Default</th><th>Description</th></tr>
       </thead>
       <tbody>
-        <tr><td class="var">STT_PROVIDER</td><td class="default">faster-whisper</td><td>Speech-to-text engine</td></tr>
-        <tr><td class="var">STT_MODEL</td><td class="default">base</td><td>STT model size (tiny/base/small/medium/large)</td></tr>
-        <tr><td class="var">LLM_PROVIDER</td><td class="default">ollama</td><td>LLM backend (ollama / llamacpp / api)</td></tr>
-        <tr><td class="var">LLM_MODEL</td><td class="default">llama2</td><td>LLM model name</td></tr>
-        <tr><td class="var">TTS_PROVIDER</td><td class="default">piper</td><td>Text-to-speech engine</td></tr>
-        <tr><td class="var">TTS_VOICE</td><td class="default">en_US-lessac</td><td>TTS voice model</td></tr>
-        <tr><td class="var">TWILIO_SID</td><td class="default">—</td><td>Twilio account SID</td></tr>
-        <tr><td class="var">TWILIO_TOKEN</td><td class="default">—</td><td>Twilio auth token</td></tr>
-        <tr><td class="var">PORT</td><td class="default">8080</td><td>API port</td></tr>
-        <tr><td class="var">LLM_BACKEND</td><td class="default">ollama</td><td>Backend routing (ollama / llamacpp / api)</td></tr>
-        <tr><td class="var">API_KEY</td><td class="default">—</td><td>Cloud LLM API key</td></tr>
+        <tr><td class="var">LLM_BACKEND</td><td class="default">ollama</td><td>LLM backend (ollama / llamacpp / api)</td></tr>
+        <tr><td class="var">OLLAMA_HOST</td><td class="default">http://127.0.0.1:11434</td><td>Ollama server URL</td></tr>
+        <tr><td class="var">OLLAMA_MODEL</td><td class="default">llama3.1:8b-instruct-q4_K_M</td><td>Ollama model name</td></tr>
+        <tr><td class="var">LLAMACPP_HOST</td><td class="default">http://127.0.0.1:8080</td><td>llama.cpp server URL</td></tr>
+        <tr><td class="var">API_PROVIDER</td><td class="default">anthropic</td><td>Cloud LLM provider (anthropic / openai)</td></tr>
         <tr><td class="var">API_MODEL</td><td class="default">claude-sonnet-4-6</td><td>Cloud LLM model</td></tr>
+        <tr><td class="var">API_KEY</td><td class="default">—</td><td>Cloud LLM API key (server-side only)</td></tr>
         <tr><td class="var">WHISPER_MODEL</td><td class="default">small.en</td><td>Whisper model variant</td></tr>
-        <tr><td class="var">WHISPER_DEVICE</td><td class="default">cuda</td><td>STT compute device</td></tr>
-        <tr><td class="var">BOT_WS_PORT</td><td class="default">8765</td><td>Internal WebSocket port</td></tr>
+        <tr><td class="var">WHISPER_DEVICE</td><td class="default">cuda</td><td>STT compute device (cuda / cpu)</td></tr>
+        <tr><td class="var">PIPER_VOICE</td><td class="default">/piper-voices/en_US-amy-medium.onnx</td><td>Piper voice model path</td></tr>
+        <tr><td class="var">BOT_WS_PORT</td><td class="default">8765</td><td>Bot WebSocket port</td></tr>
       </tbody>
     </table>
   </div>
@@ -494,8 +491,8 @@
     <p>
       <a href="https://github.com/OneByJorah/VoiceCortex">GitHub</a> &middot;
       <a href="https://jorahone.com">JorahOne</a> &middot;
-      <a href="LICENSE">MIT License</a> &middot;
-      <a href="SECURITY.md">Security</a>
+      <a href="../LICENSE">MIT License</a> &middot;
+      <a href="../SECURITY.md">Security</a>
     </p>
     <p style="margin-top: 8px; font-size: 13px;">
       Built with &#x1f334; by <a href="https://github.com/OneByJorah">OneByJorah</a>

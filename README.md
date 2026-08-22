@@ -4,7 +4,7 @@
 
 # VoiceCortex
 
-**Self-hosted, real-time phone AI assistant** — STT → LLM → TTS pipeline for Twilio, Asterisk, FreeSWITCH, and SIP.
+**Self-hosted, real-time phone AI assistant** — STT → LLM → TTS pipeline for Asterisk, FreeSWITCH, and SIP trunks.
 
 [![License](https://img.shields.io/badge/license-MIT-%237c3aed?style=flat-square)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-%233b82f6?style=flat-square&logo=python&logoColor=white)](https://www.python.org)
@@ -16,12 +16,12 @@
 </div>
 
 <p align="center">
-  <img src="dashboard/screenshot.png" alt="VoiceCortex Dashboard" width="90%">
+  <img src="docs/screenshots/hero.png" alt="VoiceCortex Dashboard" width="90%">
 </p>
 
 ## Features
 
-- **Phone Integration** — Twilio, Asterisk, FreeSWITCH, and raw SIP support.
+- **Phone Integration** — Asterisk, FreeSWITCH, FreePBX/3CX via SIP trunking.
 - **STT Pipeline** — Speech-to-text with faster-whisper and VAD filtering.
 - **LLM Processing** — AI-powered conversation via Ollama, llama.cpp, Anthropic, or OpenAI.
 - **TTS Output** — Natural speech synthesis with Piper TTS.
@@ -84,7 +84,7 @@ git clone https://github.com/OneByJorah/VoiceCortex.git
 cd VoiceCortex
 
 cp .env.example .env
-# Edit .env — set LLM_PROVIDER, TWILIO_SID, etc.
+# Edit .env — set LLM_BACKEND, OLLAMA_MODEL (or API_KEY), etc.
 
 docker compose up -d
 ```
@@ -92,29 +92,32 @@ docker compose up -d
 ### Local Development
 
 ```bash
-pip install -r requirements.txt
+pip install -r bot/requirements.txt
 python3 bot/server.py
 ```
 
 ## Configuration
 
+Copy `.env.example` to `.env`. Only the variables for your chosen `LLM_BACKEND` need to be set.
+
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `STT_PROVIDER` | `faster-whisper` | Speech-to-text provider |
-| `STT_MODEL` | `base` | STT model size |
-| `LLM_PROVIDER` | `ollama` | LLM provider (ollama / llamacpp / api) |
-| `LLM_MODEL` | `llama2` | LLM model name |
-| `TTS_PROVIDER` | `piper` | Text-to-speech provider |
-| `TTS_VOICE` | `en_US-lessac` | TTS voice model |
-| `TWILIO_SID` | — | Twilio account SID |
-| `TWILIO_TOKEN` | — | Twilio auth token |
-| `PORT` | `8080` | API port |
-| `LLM_BACKEND` | `ollama` | Backend routing |
-| `API_KEY` | — | Cloud LLM API key |
+| `LLM_BACKEND` | `ollama` | LLM backend routing (ollama / llamacpp / api) |
+| `OLLAMA_HOST` | `http://127.0.0.1:11434` | Ollama server URL |
+| `OLLAMA_MODEL` | `llama3.1:8b-instruct-q4_K_M` | Ollama model name |
+| `LLAMACPP_HOST` | `http://127.0.0.1:8080` | llama.cpp server URL |
+| `API_PROVIDER` | `anthropic` | Cloud LLM provider (anthropic / openai) |
+| `API_BASE_URL` | `https://api.anthropic.com/v1/messages` | Cloud LLM endpoint |
 | `API_MODEL` | `claude-sonnet-4-6` | Cloud LLM model |
-| `WHISPER_MODEL` | `small.en` | Whisper model variant |
+| `API_KEY` | — | Cloud LLM API key (keep server-side only) |
+| `WHISPER_MODEL` | `small.en` | Whisper model variant (base.en / small.en / medium.en) |
 | `WHISPER_DEVICE` | `cuda` | STT compute device (cuda / cpu) |
-| `BOT_WS_PORT` | `8765` | Internal WebSocket port |
+| `PIPER_VOICE` | `/piper-voices/en_US-amy-medium.onnx` | Piper voice model path |
+| `BOT_WS_PORT` | `8765` | Bot WebSocket port (FreeSWITCH transport) |
+| `SAMPLE_RATE` | `8000` (`server.py`) / `16000` (`server_asterisk.py`) | Audio sample rate |
+| `VAD_BACKEND` | auto (silero if available) | Force amplitude fallback with `amplitude` |
+
+Asterisk transport additionally supports: `ARI_HOST`, `ARI_USER`, `ARI_PASS`, `ARI_APP`, `EXTERNAL_MEDIA_HOST`, `EXTERNAL_MEDIA_PORT`.
 
 ## Project Structure
 

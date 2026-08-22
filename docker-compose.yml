@@ -12,7 +12,7 @@ version: "3.9"
 #                                                            |-- TTS: Piper
 #                                                          --WebSocket audio--> back into call
 #
-# PBX OPTIONS (see README.md "PBX integration" section for full detail):
+# PBX OPTIONS (see README.md for overview):
 #   - none/standalone : bundled FreeSWITCH below is the only PBX, dial ext. 8500
 #   - 3CX             : keep 3CX, trunk a DID/extension into this FreeSWITCH
 #   - FreePBX         : same pattern as 3CX, trunk into this FreeSWITCH

@@ -104,11 +104,7 @@ async def handle_channel(channel_id: str):
 
     try:
         while True:
-            try:
-                data, addr = await loop.sock_recv(sock, 4096), None
-            except BlockingIOError:
-                await asyncio.sleep(0.02)
-                continue
+            data, addr = await loop.sock_recv(sock, 4096)
 
             # Strip RTP header (12 bytes) to get raw PCM payload
             pcm = data[12:] if len(data) > 12 else b""
@@ -141,11 +137,12 @@ async def handle_channel(channel_id: str):
                     print(f"[hermes-asterisk] hermes says: {reply}")
 
                     audio_out = brain.synthesize_piper(reply, SAMPLE_RATE)
-                    # Send back as RTP-framed UDP packets (simplified — a real
-                    # implementation should track RTP seq/timestamp properly)
+                    # Send back as RTP-framed UDP packets to the caller's RTP
+                    # source (simplified — a real implementation should track
+                    # RTP seq/timestamp properly)
                     frame_size = 640  # 20ms @ 16kHz mono PCM16
                     for i in range(0, len(audio_out), frame_size):
-                        sock.sendto(audio_out[i:i + frame_size], (EXTERNAL_MEDIA_HOST, EXTERNAL_MEDIA_PORT))
+                        sock.sendto(audio_out[i:i + frame_size], addr)
 
     finally:
         sock.close()
