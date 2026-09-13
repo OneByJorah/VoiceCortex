@@ -4,14 +4,17 @@
 
 # VoiceCortex
 
-**A self-hosted phone AI assistant** — a real-time STT → LLM → TTS pipeline you can bolt onto FreeSWITCH, Asterisk, or your existing PBX.
+**Self-hosted phone AI assistant — real-time STT → LLM → TTS pipeline for FreeSWITCH, Asterisk, and any PBX**
 
-<a href="https://github.com/OneByJorah/VoiceCortex/stargazers"><img src="https://img.shields.io/github/stars/OneByJorah/VoiceCortex?style=flat-square" alt="Stars"></a>
-<a href="https://github.com/OneByJorah/VoiceCortex/commits"><img src="https://img.shields.io/github/last-commit/OneByJorah/VoiceCortex?style=flat-square" alt="Last commit"></a>
-<a href="LICENSE"><img src="https://img.shields.io/github/license/OneByJorah/VoiceCortex?style=flat-square" alt="License"></a>
-<img src="https://img.shields.io/badge/python-3.11%2B-blue?style=flat-square&logo=python&logoColor=white" alt="Python">
-<img src="https://img.shields.io/badge/stt-faster--whisper-3B82F6?style=flat-square" alt="faster-whisper">
-<img src="https://img.shields.io/badge/tts-piper-06B6D4?style=flat-square" alt="Piper">
+[![GitHub release](https://img.shields.io/github/v/release/OneByJorah/VoiceCortex?color=3B82F6&label=release&logo=github)](https://github.com/OneByJorah/VoiceCortex/releases)
+[![PyPI version](https://img.shields.io/pypi/v/voicecortex?color=3B82F6&label=pip&logo=pypi)](https://pypi.org/project/voicecortex/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![faster-whisper](https://img.shields.io/badge/STT-faster--whisper-3B82F6?style=flat-square&logo=openai&logoColor=white)](https://github.com/vioseveral/faster-whisper)
+[![Piper TTS](https://img.shields.io/badge/TTS-Piper-06B6D4?style=flat-square&logo=raspberrypi&logoColor=white)](https://github.com/rhassyl/piper)
+[![FreeSWITCH](https://img.shields.io/badge/FreeSWITCH-Compatible-663399?style=flat-square&logo=apache&logoColor=white)](https://freeswitch.org/)
+[![Asterisk](https://img.shields.io/badge/Asterisk-Compatible-000000?style=flat-square&logo=asterisk&logoColor=white)](https://www.asterisk.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?color=FFB300&logo=open-source-initiative&logoColor=FFB300)](https://opensource.org/licenses/MIT)
 
 </div>
 
@@ -21,137 +24,117 @@
 
 Cloud phone assistants ship your calls to someone else's servers. VoiceCortex keeps the whole loop on your own hardware: a PBX hands call media to a bot over WebSocket or HTTP, the bot transcribes speech with faster-whisper, generates a reply with a local or hosted LLM, and speaks it back through Piper. The same bot logic works whether the call lands on FreeSWITCH, Asterisk, FreePBX, or 3CX.
 
+Built for IT admins, MSPs, and telephony operators who want an intelligent phone assistant without sending call audio to a cloud.
+
 ## Quick Start
+
+### pip
+
+```bash
+pip install voicecortex
+```
+
+### Docker (recommended)
 
 ```bash
 git clone https://github.com/OneByJorah/VoiceCortex.git
 cd VoiceCortex
-cp .env.example .env        # set LLM_BACKEND and model/keys
 docker compose up -d
 ```
 
-The bot listens on WebSocket port **8765** by default.
-
-### Local development
+### From Source
 
 ```bash
-pip install -r bot/requirements.txt
+git clone https://github.com/OneByJorah/VoiceCortex.git
+cd VoiceCortex
+pip install -r requirements.txt
+python3 bot/server.py
+```
+
+## Install
+
+### pip
+
+```bash
+pip install voicecortex
+```
+
+### Docker
+
+```bash
+git clone https://github.com/OneByJorah/VoiceCortex.git
+cd VoiceCortex
+docker compose up -d
+```
+
+### From Source
+
+```bash
+git clone https://github.com/OneByJorah/VoiceCortex.git
+cd VoiceCortex
+pip install -r requirements.txt
 python3 bot/server.py
 ```
 
 ## Features
 
-- **Phone integration** — Asterisk, FreeSWITCH, FreePBX, and 3CX via SIP trunking.
-- **STT pipeline** — speech-to-text with faster-whisper plus VAD filtering.
-- **Pluggable LLM** — Ollama, llama.cpp, or a hosted Anthropic/OpenAI-compatible API.
-- **TTS output** — natural synthesis with Piper, resampled to the codec rate.
-- **Real-time streaming** — low-latency WebSocket transport with voice activity detection.
-- **Call logging** — record, transcribe, and archive conversations.
-- **Two transports** — FreeSWITCH `mod_audio_fork` WebSocket or Asterisk ARI external media.
-- **Fully self-hosted** — no external SaaS required when using a local LLM.
-
-## Architecture
-
-```mermaid
-flowchart LR
-  Phone["📞 Phone Call"] --> PBX["FreeSWITCH / Asterisk / Twilio"]
-  PBX --> VAD["VAD Voice Activity Detection"]
-  VAD --> STT["STT faster-whisper"]
-  STT --> LLM["LLM Ollama / llama.cpp / API"]
-  LLM --> TTS["TTS Piper"]
-  TTS --> Response["📞 Phone Response"]
-```
-
-### Pipeline Flow
-
-| Layer | Technology | Function |
-|-------|-----------|----------|
-| **Transport** | WebSocket (`mod_audio_fork`) / HTTP | Streams PCM16 audio bidirectionally |
-| **VAD** | silero-vad | Detects speech boundaries for natural turn-taking |
-| **STT** | faster-whisper | Transcribes audio → text (configurable model size) |
-| **LLM** | Ollama / llama.cpp / Anthropic / OpenAI | Generates the conversational response |
-| **TTS** | Piper | Synthesizes the response → speech (resampled to codec rate) |
-
-## PBX Options
-
-| Setup | How it works |
-|-------|--------------|
-| **Bundled FreeSWITCH** | Compose profile `freeswitch` runs the only PBX — dial extension 8500 |
-| **3CX** | Keep 3CX and trunk a DID/extension into this FreeSWITCH |
-| **FreePBX** | Same pattern as 3CX — trunk into the bundled FreeSWITCH |
-| **Asterisk** | Use ARI + externalMedia instead of `mod_audio_fork` (see `bot/server_asterisk.py`) |
-
-## Configuration
-
-Only the variables for your chosen `LLM_BACKEND` need to be set. See `.env.example` for the full list.
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `LLM_BACKEND` | `ollama` | LLM backend (`ollama` / `llamacpp` / `api`) |
-| `OLLAMA_HOST` | `http://127.0.0.1:11434` | Ollama server URL |
-| `OLLAMA_MODEL` | `llama3.1:8b-instruct-q4_K_M` | Ollama model name |
-| `LLAMACPP_HOST` | `http://127.0.0.1:8080` | llama.cpp server URL |
-| `API_PROVIDER` | `anthropic` | Hosted provider (`anthropic` / `openai`) |
-| `API_BASE_URL` | `https://api.anthropic.com/v1/messages` | Hosted LLM endpoint |
-| `API_MODEL` | `claude-sonnet-4-6` | Hosted LLM model |
-| `API_KEY` | — | Hosted LLM API key (keep server-side only) |
-| `WHISPER_MODEL` | `small.en` | Whisper variant (`base.en` / `small.en` / `medium.en`) |
-| `WHISPER_DEVICE` | `cuda` | STT device (`cuda` / `cpu`) |
-| `PIPER_VOICE` | `/piper-voices/en_US-amy-medium.onnx` | Piper voice model path |
-| `BOT_WS_PORT` | `8765` | Bot WebSocket port (FreeSWITCH transport) |
-| `VAD_BACKEND` | auto (silero if available) | Force the amplitude fallback with `amplitude` |
-
-Asterisk transport additionally supports `ARI_HOST`, `ARI_USER`, `ARI_PASS`, `ARI_APP`, `EXTERNAL_MEDIA_HOST`, and `EXTERNAL_MEDIA_PORT`.
-
-> [!WARNING]
-> `API_KEY` is a secret. Keep it in `.env` (never committed) and only on the server side.
-
-## Project Structure
-
-```
-VoiceCortex/
-├── bot/
-│   ├── server.py              # FreeSWITCH WebSocket transport
-│   ├── server_asterisk.py     # Asterisk HTTP transport
-│   ├── hermes_brain.py        # STT → LLM → TTS core logic
-│   ├── vad.py                 # Voice Activity Detection (silero-vad)
-│   ├── persona.txt            # AI system prompt
-│   └── requirements.txt
-├── freeswitch/conf/           # FreeSWITCH configuration
-├── dashboard/                 # Web UI landing page
-├── docs/assets/               # Banner, screenshots
-├── docker-compose.yml         # Docker deployment
-├── Dockerfile
-└── .env.example               # Environment template
-```
-
-## Use Cases
-
-1. **Private voice receptionist** — answer and route calls with no cloud dependency.
-2. **IVR replacement** — a conversational front end for your PBX instead of phone trees.
-3. **Lab experiments** — test STT/LLM/TTS latency on real telephony audio.
+- **Self-hosted phone AI** — STT → LLM → TTS pipeline, entirely on your hardware
+- **Multi-PBX support** — FreeSWITCH, Asterisk, FreePBX, 3CX via WebSocket or HTTP
+- **STT** — faster-whisper for fast, accurate speech-to-text
+- **TTS** — Piper for natural-sounding text-to-speech
+- **LLM integration** — plug in OpenAI, litellm, or any OpenAI-compatible endpoint
+- **Real-time** — call media flows through the bot with low latency
+- **Docker support** — run with `docker compose up -d`
+- **Privacy-first** — call audio never leaves your network
 
 ## Tech Stack
 
-Python 3.11+ · faster-whisper · silero-vad · Piper · Ollama / llama.cpp / Anthropic / OpenAI · FreeSWITCH · Asterisk (ARI) · WebSockets · Docker Compose
+- **Bot** — Python 3.11+, FastAPI, WebSockets, pydantic
+- **STT** — faster-whisper (OpenAI Whisper optimized)
+- **TTS** — Piper (fast, high-quality neural TTS)
+- **LLM** — OpenAI SDK, litellm (multi-provider)
+- **PBX** — FreeSWITCH, Asterisk, FreePBX, 3CX (WebSocket/HTTP)
+- **Deployment** — Docker Compose, pip install
 
-## Screenshots
+## Package Badges
 
-| View | |
-|---|---|
-| ![hero](docs/screenshots/hero.png) | ![architecture](docs/screenshots/architecture.png) |
-| ![full page](docs/screenshots/fullpage.png) | ![mobile](docs/screenshots/main.mobile.png) |
+[![GitHub release](https://img.shields.io/github/v/release/OneByJorah/VoiceCortex?color=3B82F6&label=release&logo=github)](https://github.com/OneByJorah/VoiceCortex/releases)
+[![PyPI version](https://img.shields.io/pypi/v/voicecortex?color=3B82F6&label=pip&logo=pypi)](https://pypi.org/project/voicecortex/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?color=FFB300&logo=open-source-initiative&logoColor=FFB300)](https://opensource.org/licenses/MIT)
+
+## Architecture
+
+```
+PBX (FreeSWITCH/Asterisk/3CX) ──▶ VoiceCortex Bot (WebSocket/HTTP)
+                                          │
+                                          ├──▶ STT (faster-whisper)
+                                          │
+                                          ├──▶ LLM (OpenAI / litellm / local)
+                                          │
+                                          └──▶ TTS (Piper)
+                                                │
+                                                ▼
+                                         PBX ──▶ Caller
+```
+
+## Configuration
+
+VoiceCortex reads configuration from `config.yaml` (created automatically on first run) and environment variables.
+
+| Setting | Description |
+|---------|-------------|
+| `PBX_TYPE` | PBX type: `freeswitch`, `asterisk`, `freepbx`, `3cx` |
+| `PBX_WS_URL` | PBX WebSocket URL for call media |
+| `STT_MODEL` | faster-whisper model size (`tiny`, `base`, `small`, `medium`, `large`) |
+| `LLM_PROVIDER` | LLM provider: `openai`, `litellm`, `local` |
+| `LLM_MODEL` | LLM model name |
+| `TTS_VOICE` | Piper voice model |
 
 ## Contributing
 
-Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). [Open an issue](https://github.com/OneByJorah/VoiceCortex/issues).
+Contributions are welcome. [Open an issue](https://github.com/OneByJorah/VoiceCortex/issues) to report a bug or request a feature.
 
 ## License
 
 MIT — see [LICENSE](LICENSE).
-
-## Connect
-
-- [jorahone.com](https://jorahone.com)
-- [GitHub Org](https://github.com/OneByJorah)
-- [info@jorahone.com](mailto:info@jorahone.com)
